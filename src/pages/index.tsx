@@ -7,6 +7,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { Loading } from "~/components/loading";
 import { useState } from "react";
+import { toast } from "react-hot-toast";
 
 dayjs.extend(relativeTime);
 
@@ -21,6 +22,15 @@ const CreatePostWizard = () => {
     onSuccess: () => {
       setInput("");
       void ctx.post.getAll.invalidate();
+    },
+    onError: (e) => {
+      const errMsg = e.data?.zodError?.fieldErrors.content;
+
+      if (errMsg?.[0]) {
+        toast.error(errMsg[0]);
+      } else {
+        toast.error("Failed to post! Please try again.");
+      }
     },
   });
 
@@ -41,17 +51,29 @@ const CreatePostWizard = () => {
         type="text"
         value={input}
         onChange={(e) => setInput(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            if (input) {
+              mutate({
+                content: input,
+              });
+            }
+          }
+        }}
         disabled={isLoading}
       />
-      <button
-        onClick={() => {
-          mutate({
-            content: input,
-          });
-        }}
-      >
-        Post
-      </button>
+      {input !== "" && !isLoading && (
+        <button
+          onClick={() => {
+            mutate({
+              content: input,
+            });
+          }}
+        >
+          Post
+        </button>
+      )}
     </div>
   );
 };
