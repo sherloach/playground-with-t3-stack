@@ -1,5 +1,5 @@
 import { SignInButton, useUser } from "@clerk/nextjs";
-import { type RouterOutputs, api } from "~/utils/api";
+import { api } from "~/utils/api";
 import Image from "next/image";
 
 import dayjs from "dayjs";
@@ -7,8 +7,8 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import { Loading } from "~/components/loading";
 import { useState } from "react";
 import { toast } from "react-hot-toast";
-import Link from "next/link";
 import { PageLayout } from "~/components/layout";
+import { PostView } from "~/components/postview";
 
 dayjs.extend(relativeTime);
 
@@ -17,10 +17,10 @@ const CreatePostWizard = () => {
   const [input, setInput] = useState("");
   const ctx = api.useContext();
 
-  const { mutate, isLoading } = api.post.create.useMutation({
+  const { mutate, isLoading } = api.posts.create.useMutation({
     onSuccess: () => {
       setInput("");
-      void ctx.post.getAll.invalidate();
+      void ctx.posts.getAll.invalidate();
     },
     onError: (e) => {
       const errMsg = e.data?.zodError?.fieldErrors.content;
@@ -77,38 +77,8 @@ const CreatePostWizard = () => {
   );
 };
 
-type PostWithUser = RouterOutputs["post"]["getAll"][number];
-const PostView = (props: PostWithUser) => {
-  const { post, author } = props;
-
-  return (
-    <div className="flex gap-3 border-b border-slate-400 p-4" key={post.id}>
-      <Image
-        className="h-14 w-14 rounded-full"
-        src={author.profileImageUrl}
-        alt={author.username}
-        width={56}
-        height={56}
-      />
-      <div className="flex flex-col">
-        <div className="flex text-slate-300">
-          <Link href={`/@${author.username}`}>
-            <span>{`@${author.username}`}</span>
-          </Link>
-          <Link href={`post/${post.id}`}>
-            <span className="font-thin">{` · ${dayjs(
-              post.createdAt
-            ).fromNow()} `}</span>
-          </Link>
-        </div>
-        <span>{post.content}</span>
-      </div>
-    </div>
-  );
-};
-
 const Feed = () => {
-  const { data, isLoading } = api.post.getAll.useQuery();
+  const { data, isLoading } = api.posts.getAll.useQuery();
 
   if (isLoading) return <Loading />;
 
@@ -127,7 +97,7 @@ export default function Home() {
   const { isLoaded, isSignedIn } = useUser();
 
   // Start fetching asap
-  api.post.getAll.useQuery();
+  api.posts.getAll.useQuery();
 
   // return empty div if BOTH aren't loaded, since user tends to load faster
   if (!isLoaded) return <div />;
